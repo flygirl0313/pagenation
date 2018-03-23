@@ -3,57 +3,70 @@
 样式：
     widthData：分页盒子的宽度
     isShowBgColor: 是否有背景和边框
+
 数据：
     totalNum ： 数据总条数,
     pageSize ： 每页条数,
     prePageItem: 页面上可见的页码个数，其他以...代替,必须是奇数
+    currentPage： 初始化第几页
+
 功能：
-    isShowTotal ：是否显示总数 - 默认不显示
-    isShowFast: 是否显示快捷跳转首末页 - 默认不显示
-    isShowJump: 是否显示允许跳页 - 默认不显示
+    isShowTotal ：  是否显示总数 - 默认不显示
+    isShowFast:     是否显示快捷跳转首末页 - 默认不显示
+    isShowDropdown :是否显示每页条数下拉框 - 默认不显示
+    isShowJump:     是否显示允许跳页 - 默认不显示
 
 父元素可监听到的事件：
-    选中某项：handleItemClick(number) number:当前点击的页数
-    直接前往：handelJumpTo(number) number: 用户输入的页码
+    选中某项：handleItemClick()  当前点击的页数
+    直接前往：handelJumpTo()     用户输入的页码
 
 实现思想：将页码数组划分为三个区间分别处理。
  -->
 <template>
     <div class="mod-pageNation" :style="{width: widthData}">
+         <!-- 总数 -->
+        <li class="totalText" v-show="isShowTotal" ><span>共{{totalNum}}条</span></li>    
         <!-- 每页条数下拉框 -->
         <div  class="chooseList" v-if="isShowDropdown" >
-            <span class="title">每页10条</span>
-            <div v-show="isShowList">
-                <li class="chooseItem">每页10条</li>
-                <li class="chooseItem">每页10条</li>
-                <li class="chooseItem">每页10条</li>                
+            <div class="title" @click="handleClickSelect">
+                <span class="titleText">{{titleText}}</span>
+                <img ref="child" :class="isRotate ? 'rotateup':'rotatedown'" src="../../../../static/arrow__down.svg" height="14" width="22" alt="">
             </div>
-        </div>
-        <!-- 总数 -->
-        <li class="totalText" v-show="isShowTotal" ><span>共{{totalNum}}条</span></li>            
+            <div class="prePagelist"v-if="prePagelist!=null&&prePagelist.lenth!=0" v-show="isShowList">
+                <li class="chooseItem" 
+                    v-for="(chooseItem, chooseIndex) in prePagelist"
+                    :key="chooseIndex"
+                    @click="handleChoosePrePageSize(chooseItem)">
+                    {{chooseItem.name}}
+                </li>              
+            </div>
+        </div>       
         <!-- 分页列表 -->
         <ul class="pageList">
             <!-- 上一页 -->
-            <li class="pageItem" :class="{'disabled': current == 1}"><span @click="handleItemClick(current - 1)"> « </span></li>
+            <li class="pageItem" :class="{'disabled': current == 1, 'simple': isShowBgColor == true}" ><span @click="handleItemClick(current - 1)"> « </span></li>
             <!-- 首页 -->
-            <li class="pageItem btn" :class="{'disabled': current == 1}" v-show="isShowFast"><span @click="handleItemClick(1)"> 首页 </span></li>
+            <li class="pageItem btn" :class="{'disabled': current == 1, 'simple': isShowBgColor == true}" v-show="isShowFast"><span @click="handleItemClick(1)"> 首页 </span></li>
             <!-- 分页项 -->
             <li class="pageItem"
                 v-for="pageItem in pageList" 
-                :class="{'active': current == pageItem.val}"
+                :class="{'active': current == pageItem.val,'simple': isShowBgColor == true}"
                 @click="handleItemClick(pageItem.val)">
                 <span>{{ pageItem.text }}</span>
             </li>
             <!-- 末页 -->
-            <li class="pageItem btn" :class="{'disabled': current == pagesCount}" v-show="isShowFast"><span @click="handleItemClick(pagesCount)">尾页</span></li>
+            <li class="pageItem btn" :class="{'disabled': current == pagesCount, 'simple': isShowBgColor == true}" v-show="isShowFast"><span @click="handleItemClick(pagesCount)">尾页</span></li>
             <!-- 下一页 -->
-            <li class="pageItem" :class="{'disabled': current == pagesCount}"><span @click="handleItemClick(current + 1)">»</span></li>         
+            <li class="pageItem" :class="{'disabled': current == pagesCount, 'simple': isShowBgColor == true}"><span @click="handleItemClick(current + 1)">»</span></li>         
         </ul>
+        <!-- 直接前往 -->
+        <div class="jumpTo" v-show="isShowJump">
+            <span class="jumpText">前往</span><input type="text" class="jumpNum" v-model="current" ref="jumpInput" @change="handleJumpTo"><span class="jumpText">页</span>
+        </div>
     </div>  
 </template>
 <style lang="less" scope>
 .mod-pageNation{
-    width: 500px; 
     display: flex;   
    .pageList{
        display: flex;
@@ -79,26 +92,39 @@
             &:hover{
                 color:#409eff;
             }
+            &.active {
+                background: #409eff;
+                color: #fff!important;
+                border-color: #409eff;
+            }
         }
         .btn{
            min-width: 50px;
         }
-        .active {
-            background: #409eff;
-            color: #fff!important;
-            border-color: #409eff;
+       
+        .simple{
+            background: #fff;
+            border: none;
+            &.active {
+                background: #fff;
+                color: #409eff!important;
+                border: none;
+            }
         }
     }
     .totalText{
+        min-width: 80px;
+        text-align: center;
         display: inline-block;
-        margin:0px 10px;
+        margin: 0px 10px;
         line-height: 28px;
-        font-size:13px;
+        font-size: 13px;
     }
     .chooseList{
+        position: relative;
+        margin:0px 10px;
         .title{
-            display: inline-block;
-            width: 100px;
+            width: 120px;
             height: 28px;
             line-height: 28px;
             padding-left: 10px;
@@ -110,7 +136,76 @@
             &:hover{
                 border: 1px solid #333;
             }
+            .titleText{
+                display: inline-block;
+                height:100%;
+                margin-right:14px;
+            }
+            img {
+                vertical-align: text-top;
+                margin-left: -5px;
+                &.rotateup{
+                    vertical-align: unset;
+                    transform: rotateZ(180deg);
+                    transition: all .5s;
+                } 
+                &.rotatedown{
+                    vertical-align: unset;
+                    transform: rotateZ(360deg);
+                    transition: all .5s;
+                } 
+            }
         }
+        .prePagelist{
+            min-width: 134px;
+            position: absolute;
+            top: 30px;
+            z-index: 10000;
+            background: #fff;
+            border: 1px solid #ccc;
+            .chooseItem{
+                padding: 0px 10px;
+                height: 26px;
+                line-height: 26px;
+                font-size: 13px;
+                text-align: left;
+                color: #666;
+                border-bottom: 1px dashed #ccc;
+                cursor: pointer;
+                &:hover{
+                    background: #f4f4f5;
+                    color:#409eff;
+                }
+            }
+            .chooseItem:last-child{border:none;}
+        }
+    }
+    .jumpTo{
+        display: flex;
+        line-height: 28px;
+        margin: 0px 20px;
+        font-size:13px;
+        .jumpText{
+            display: inline-block;
+            width: 40px;
+            text-align: center;
+        }
+        .jumpNum{
+            display: inline-block;
+            width: 48px;            
+            height: 26px;
+            line-height: 26px;
+            outline: none;
+            padding: 0 15px;
+            text-align: center;
+            background-color: #fff;
+            border-radius: 4px;
+            border: 1px solid #dcdfe6;
+            box-sizing: border-box;
+            color: #606266;
+            transition: border-color .2s cubic-bezier(.645,.045,.355,1);
+        }
+        input:focus{border:1px solid #409eff;}
     }
 }
 </style>
@@ -120,13 +215,13 @@ export default {
     props:{
         //分页总宽度
         widthData:{
-            type:Number,
-            default:400
+            type: Number,
+            default: 500
         },
         //数据总条数, 默认0条
         totalNum:{
             type: Number,
-            default:0,
+            default: 0,
         },
         //每页的条数,默认为10条
         pageSize:{
@@ -136,7 +231,7 @@ export default {
         //可见页码，其他的以...替代，默认5个
         prePageItem: { 
             type : Number,
-            default : 5,
+            default: 5,
         },
         // 当前页码
         currentPage: {
@@ -145,40 +240,44 @@ export default {
         },
         //是否显示背景
         isShowBgColor: {
-            type:Boolean,
-            default:true
+            type: Boolean,
+            default: false
         },
         //是否显示首末页快捷键
         isShowFast: {
-            type:Boolean,
-            default:false
+            type: Boolean,
+            default: false
         },
         //是否显示总数
         isShowTotal: {
-            type:Boolean,
-            default:false
+            type: Boolean,
+            default: false
         },
         //是否显示直接前往
         isShowJump: {
-            type:Boolean,
-            default:false
+            type: Boolean,
+            default: false
         },
         //是否显示直接前往
         isShowDropdown: {
-            type:Boolean,
-            default:false
+            type: Boolean,
+            default: false
         },
     },
     data() {
+        let pageSize = this.pageSize;
         return {
-            current: this.currentPage,     //当前页
-            isShowList: false,   // 是否显示下拉框
+            titleText : '每页'+ pageSize +'条',  //下拉款标题
+            pageSizeNum: pageSize,              //每页多少条数据
+            current: this.currentPage,          //当前页,默认传入的当前页
+            isShowList: false,                  // 是否显示下拉框
+            isRotate: false,                    // 下拉框箭头旋转
         }
     },
     computed: {
         //计算总页码, 向上取整（总数/每页条数）
         pagesCount(){
-            return Math.ceil(this.totalNum / this.pageSize)
+            return Math.ceil(this.totalNum / this.pageSizeNum)
         },
         //可见页码必须为奇数个,默认5
         prePageItems(){
@@ -192,7 +291,6 @@ export default {
             let temp = [],  list = [];  
             let count = Math.floor(this.prePageItems / 2);  //步长值
             let center = this.current;     //当前的中心
-            
             /*情景一：总页码数 < 可显示的页码数 无需处理全部显示，[{1},{2},{3}]；*/
             if (len <= this.prePageItems) {
                 for(var i=1; i<=len; i++){
@@ -254,14 +352,68 @@ export default {
                 }
                 return list;
         },
+        //制作下拉框数据（按总数位数-固定分4层）
+        prePagelist(){
+            let total = this.totalNum;
+            let len = total.toString().length - 1;
+            let list = []
+            var str = '1'
+            if(total!=0){
+                while(len--){str = str + '0'}
+                for(var count=1; count<=4; count++){
+                    list.push({
+                        name: '每页'+Math.ceil((Number(str)*count)/2)+'条',
+                        value: Math.ceil((Number(str)*count)/2)
+                    });
+                }
+                //制作默认节点
+                list.unshift({ 
+                    name: '每页'+this.pageSize+'条',
+                    value: this.pageSize
+                })
+                return list 
+            }
+        }
+    },
+    watch:{
+        //每页条数计算
+        'pageSize': function(newValue) {
+            this.pageSizeNum = newValue;
+        },
     },
     methods: {
-        handleItemClick(idx){
+        //点击分页
+        handleItemClick(idx) {
              if (this.current != idx && idx > 0 && idx < this.pagesCount + 1) {
                 this.current = idx;
                 this.$emit('pagechange', this.current);
             }
+        },
+        //下拉框的展示隐藏，箭头旋转
+        handleClickSelect() {
+            this.isRotate = !this.isRotate;
+            this.isShowList = !this.isShowList;
+        },
+        //选择每页多少条数据
+        handleChoosePrePageSize(preItem) {
+            this.isRotate = !this.isRotate;
+            this.isShowList = !this.isShowList;
+            this.titleText = preItem.name;            
+            this.pageSizeNum = preItem.value;
+        },
+        //输入直接前往
+        handleJumpTo(){
+            let jumpNum = this.$refs.jumpInput.value
+            var reg = new RegExp("^[1-9]*$");  //正则匹配，输入的为正整数：
+            if(reg.test(jumpNum)){
+                this.current = Number(jumpNum)
+                this.$emit('pagechange', this.current);
+            }else{
+                alert('请输入正确的数字格式！');
+            }
+            (jumpNum>this.pageList.length)&&(alert('超出页码范围'))
         }
+
     }
 }
 </script>
