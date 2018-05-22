@@ -61,7 +61,7 @@
         </ul>
         <!-- 直接前往 -->
         <div class="jumpTo" v-show="isShowJump">
-            <span class="jumpText">前往</span><input type="text" class="jumpNum" v-model="current" ref="jumpInput" @change="handleJumpTo"><span class="jumpText">页</span>
+            <span class="jumpText">前往</span><input type="text" class="jumpNum" v-model="inputCurrent" ref="jumpInput" @change="handleJumpTo"><span class="jumpText">页</span>
         </div>
     </div>  
 </template>
@@ -124,7 +124,7 @@
         position: relative;
         margin:0px 10px;
         .title{
-            width: 120px;
+            width: 130px;
             height: 28px;
             line-height: 28px;
             padding-left: 10px;
@@ -272,6 +272,7 @@ export default {
             current: this.currentPage,          //当前页,默认传入的当前页
             isShowList: false,                  // 是否显示下拉框
             isRotate: false,                    // 下拉框箭头旋转
+            inputCurrent: this.currentPage,
         }
     },
     computed: {
@@ -386,6 +387,7 @@ export default {
         handleItemClick(idx) {
              if (this.current != idx && idx > 0 && idx < this.pagesCount + 1) {
                 this.current = idx;
+                this.inputCurrent = idx;
                 this.$emit('pagechange', this.current);
             }
         },
@@ -401,19 +403,34 @@ export default {
             this.titleText = preItem.name;            
             this.pageSizeNum = preItem.value;
         },
-        //输入直接前往
+        //输入直接前往（有问题..）
         handleJumpTo(){
             let jumpNum = this.$refs.jumpInput.value
-            var reg = new RegExp("^[1-9]*$");  //正则匹配，输入的为正整数：
-            if(reg.test(jumpNum)){
-                this.current = Number(jumpNum)
-                this.$emit('pagechange', this.current);
+            let pageCount = this.pagesCount
+            if(this.detectNum(jumpNum)){
+                console.log(jumpNum,this.pagesCount)
+                if(jumpNum!="0" && Number(jumpNum)<pageCount){
+                    debugger
+                    this.current = Number(jumpNum)
+                    this.$emit('pagechange', this.current);
+                }else{
+                    alert('超出页码范围')    
+                }
             }else{
-                alert('请输入正确的数字格式！');
+                 alert('请输入正确的数字格式！');
             }
-            (jumpNum>this.pageList.length)&&(alert('超出页码范围'))
+        },
+        detectNum(str){
+            var n = 0;
+            for(var i=0;i<str.length;i++){
+                n = str.charCodeAt(i);
+                // 因为数字0~9的编码是48-57，如果有一个编码不在这个范围内，那么就不是纯数字
+                if(n<48|| n>57){
+                    return false;
+                }
+            }
+            return true;
         }
-
     }
 }
 </script>
