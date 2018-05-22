@@ -408,9 +408,7 @@ export default {
             let jumpNum = this.$refs.jumpInput.value
             let pageCount = this.pagesCount
             if(this.detectNum(jumpNum)){
-                console.log(jumpNum,this.pagesCount)
                 if(jumpNum!="0" && Number(jumpNum)<pageCount){
-                    debugger
                     this.current = Number(jumpNum)
                     this.$emit('pagechange', this.current);
                 }else{
