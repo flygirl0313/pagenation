@@ -459,3 +459,55 @@ export const colorRgb = function(str, op) {
 //     }
 //     return target;
 // }
+
+/**
+ * 获取前 n 天 
+ */
+export const getBeforeDay = (num) => {
+    var date = new Date();
+    var year = date.getFullYear();
+    var mon = date.getMonth() + 1;
+    var day = date.getDate();
+    if(day <= num) {
+        if(mon > 1) {
+            mon = mon - 1;
+        } else {
+            year = year - 1;
+            mon = 12;
+        }
+    }
+    date.setDate(date.getDate() - num);
+    year = date.getFullYear() ; mon = date.getMonth() + 1; day = date.getDate();
+    var result = year + "-" + (mon < 10 ? ('0' + mon) : mon) + "-" + (day < 10 ? ('0' + day) : day);
+    var obj =  { type1 : date, type2: result};
+    return obj
+}
+/**
+ * 获取前 n 月 
+ */
+export const getBeforeMonth = (num) => {
+    var date = new Date();
+    var year = date.getFullYear();
+    var mon = date.getMonth() + 1;
+    var day = date.getDate();
+    var days = new Date(year, mon, 0);
+    days = days.getDate(); //获取当前日期中月的天数
+    var newYear = year;
+    var newMonth = parseInt(mon) - num;
+    if (newMonth <= 0) {
+        newYear = parseInt(newYear) - parseInt(newMonth / 12 == 0 ? 1 : parseInt(newMonth) / 12);
+        newMonth = 12 - (Math.abs(newMonth) % 12);
+    }
+    var day2 = day;
+    var days2 = new Date(newYear, newMonth, 0);
+    days2 = days2.getDate();
+    if (day2 > days2) {
+     day2 = days2;
+    }
+    if (newMonth < 10) {
+     newMonth = '0' + newMonth;
+    }
+    var result = newYear + '-' + newMonth + '-' + day2;
+    var date = result;
+    return result;
+ }
