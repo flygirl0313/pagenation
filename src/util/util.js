@@ -479,7 +479,7 @@ export const getBeforeDay = (num) => {
     date.setDate(date.getDate() - num);
     year = date.getFullYear() ; mon = date.getMonth() + 1; day = date.getDate();
     var result = year + "-" + (mon < 10 ? ('0' + mon) : mon) + "-" + (day < 10 ? ('0' + day) : day);
-    var obj =  { type1 : date, type2: result};
+    var obj =  { timeStamp : date, timeStr: result};
     return obj
 }
 /**
@@ -490,24 +490,24 @@ export const getBeforeMonth = (num) => {
     var year = date.getFullYear();
     var mon = date.getMonth() + 1;
     var day = date.getDate();
+    //获取当前日期中月的天数
     var days = new Date(year, mon, 0);
-    days = days.getDate(); //获取当前日期中月的天数
+    days = days.getDate(); 
     var newYear = year;
     var newMonth = parseInt(mon) - num;
     if (newMonth <= 0) {
         newYear = parseInt(newYear) - parseInt(newMonth / 12 == 0 ? 1 : parseInt(newMonth) / 12);
         newMonth = 12 - (Math.abs(newMonth) % 12);
     }
-    var day2 = day;
+    var newDay = day;
     var days2 = new Date(newYear, newMonth, 0);
     days2 = days2.getDate();
-    if (day2 > days2) {
-     day2 = days2;
+    if (newDay > days2) {
+        newDay = days2;
     }
-    if (newMonth < 10) {
-     newMonth = '0' + newMonth;
-    }
-    var result = newYear + '-' + newMonth + '-' + day2;
-    var date = result;
-    return result;
- }
+    var result = newYear + "-" + (newMonth < 10 ? ('0' + newMonth) : newMonth) + "-" + (newDay < 10 ? ('0' + newDay) : newDay);
+    var dateStr = new Date(result);
+    var obj = { timeStamp : dateStr, timeStr : result};
+    return obj
+}
+    
