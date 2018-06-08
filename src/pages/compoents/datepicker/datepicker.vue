@@ -1,10 +1,10 @@
 <template>
   <div id="datepicker">
-        <div class="timeTxtWarp" @click="handleShowTimePanel">
+        <div class="timeTxtWarp" :style="{width: width+'px'}" @click="handleShowTimePanel">
                 <div class="timeTxtContent">
-                    <span class="beginTxt">2018.4.30</span>
-                    <i class="rangeTxt">至</i>
-                    <span class="endTxt">2018.05.04</span>
+                    <span class="beginTxt">{{timeText[0]}}</span>
+                    <i class="rangeTxt" v-if="isDateRange">至</i>
+                    <span class="endTxt" v-if="isDateRange">{{timeText[1]}}</span>
                 </div>
                 <div class="arrowWarp">
                     <img class="arrow" :class="[ iconToggle ? 'rotateimg1':'rotateimg2']" src="../../../../static/arrow__down.svg" height="14" width="22" alt="">
@@ -32,7 +32,7 @@
             </div>
             <div class="datePickTable">
                 <div class="start__time">
-                    <span class="start__text">开始时间</span>
+                    <span class="start__text" v-if="isDateRange">开始时间</span>
                     <el-date-picker 
                         ref="elDatepicker1" 
                         :clearable="false" 
@@ -40,7 +40,8 @@
                         :align="align" 
                         :size="size" 
                         v-model="modelValue[0]" 
-                        :format="timeType ? timeType.format : 'yyyy-MM-dd'"                        
+                        :format="timeType ? timeType.format : 'yyyy-MM-dd'"  
+                        value-format="yyyy-MM-dd"                      
                         :type="timeType ? timeType.type : 'date'" 
                         :placeholder="placeholder" 
                         @change="handleDatePickerChange" 
@@ -48,7 +49,7 @@
                     </el-date-picker>
                 </div>
                 <div class="end__time" v-if="isDateRange">
-                    <span class="end__text">结束时间</span>
+                    <span class="end__text" v-if="isDateRange">结束时间</span>
                     <el-date-picker 
                         ref="elDatepicker2" 
                         :clearable="false" 
@@ -57,6 +58,7 @@
                         :size="size" 
                         v-model="modelValue[1]" 
                         :format="timeType ? timeType.format : 'yyyy-MM'" 
+                        value-format="yyyy-MM-dd"
                         :type="timeType ? timeType.type : 'date'" 
                         :placeholder="placeholder"  
                         @change="handleDatePickerChange" 
@@ -77,7 +79,6 @@
     position: relative;
     .timeTxtWarp{
         display: flex;
-        width: 180px;
         height: 26px;
         line-height: 26px;
         border: 1px solid #ccc;
@@ -86,12 +87,13 @@
         font-size: 12px;
         font-family: 'MicrosoftYaHei';
         cursor: pointer;
+        text-align: center;
+        padding: 0 5px;
         &:hover{
             border: 1px solid #000;
         }
         .timeTxtContent{
             width:85%; 
-            padding: 0px 6px;
             .rangeTxt{
                 font-style: normal
             }
@@ -136,9 +138,11 @@
   
         }
         .timeTypeList{
-            display: flex;
-            width: 40%;
+            width: 140px;
+            box-sizing: border-box;
+            overflow: hidden;
             .typeItem{
+                float: left;
                 span{
                     display: inline-block;
                     width: 42px;
@@ -163,15 +167,19 @@
             
         }
         .fastChooseList{
-            display: flex;
-            width: 60%;
-            padding-left: 50px;
+            margin-left: auto;
+            box-sizing: border-box;
+            overflow: hidden;
             .chooseItem{
+                float: left;
                 margin: 0 5px;
                 font-size: 11px;
                 letter-spacing: -0.25px;
-                text-align: center;
+                text-align: left;
                 cursor: pointer;
+                &:hover{
+                    color: #528DFF;
+                }
             } 
             .curChooseItem{
                span{
@@ -193,7 +201,7 @@
             }
             .el-date-editor.el-input, .el-date-editor.el-input__inner{
                 width: 120px;
-                margin-top: 6px;
+                margin-top: 10px;
             }
             .el-input--prefix .el-input__inner{
                 padding-right:0px;
@@ -238,19 +246,23 @@
     export default {
         data() {
            return {
-                isShowTimePanel: true,  //显示时间面板
+                isShowTimePanel: false,  //显示时间面板
                 iconToggle: false,       //箭头反转
                 curDataType: 0,          //当前选中的时间类型
                 curFastChoose: 0,        //当前快捷菜单选中项
-                shortcuts: this.shortcutsDate,
-                timeType : this.dateType[0],             
+                timeType : this.dateType[0],
+                shortcuts: this.dateType[0].value =='day' ? this.shortcutsDate : this.shortcutsMonth,
                 modelValue : this.dateType[0].value =='day' ? 
-                             this.shortcutsDate[this.defaultActiveDateIndex].timeStamp : 
-                             this.shortcutsMonth[this.defaultActiveDateIndex].timeStamp,
-                
+                             this.shortcutsDate[this.defaultActiveDateIndex].value : 
+                             this.shortcutsMonth[this.defaultActiveDateIndex].value,
            }
         },
         props: {
+            //时间框宽度
+            width:{
+                type: Number,
+                default: 180
+            },
             //时间类型
             dateType:{
                 type: Array,
@@ -270,12 +282,6 @@
                     ]
                 }
             },
-            //时间面板类型选择                        
-            datePanelType:{
-                type: String,
-                default: 'date'
-            },
-            
             //时间范围类型
             isDateRange:{
                 type: Boolean,
@@ -294,7 +300,7 @@
             //不选择时提示符
             placeholder:{
                 type: String,
-                default: '选择范围'
+                default: '选择时间'
             },
             //按日快捷键选项列表
             shortcutsDate:{
@@ -302,16 +308,22 @@
                 default:function(){
                     let shortcutsDate = [{
                         text: '近7天',
-                        timeStamp: [getBeforeDay(7).timeStamp, getBeforeDay(1).timeStamp],  //时间戳类型
-                        timeStr: [getBeforeDay(7).timeStr, getBeforeDay(1).timeStr],         //数值类型
+                        value: [getBeforeDay(7).timeStr, getBeforeDay(1).timeStr],  //时间戳类型
+                        onClick: () => {
+                            return [getBeforeDay(7).timeStr, getBeforeDay(1).timeStr];
+                        },
                     }, {
                         text: '近15天',
-                        timeStamp: [getBeforeDay(15).timeStamp, getBeforeDay(1).timeStamp],
-                        timeStr: [getBeforeDay(15).timeStr, getBeforeDay(1).timeStr]                        
+                        value: [getBeforeDay(15).timeStr, getBeforeDay(1).timeStr],
+                        onClick: () => {
+                            return [getBeforeDay(15).timeStr, getBeforeDay(1).timeStr];
+                        },                    
                     }, {
                         text: '近30天',
-                        timeStamp: [getBeforeDay(30).timeStamp, getBeforeDay(1).timeStamp],
-                        timeStr: [getBeforeDay(30).timeStr, getBeforeDay(1).timeStr]
+                        value: [getBeforeDay(30).timeStr, getBeforeDay(1).timeStr],
+                        onClick: () => {
+                            return [getBeforeDay(30).timeStr, getBeforeDay(1).timeStr];
+                        },
                     }];
                     return shortcutsDate;
                 }
@@ -322,12 +334,16 @@
                 default:function(){
                     let shortcutsMonth = [{
                         text: '近6个月',
-                        timeStamp: [getBeforeMonth(6).timeStamp, getBeforeMonth(1).timeStamp],
-                        timeStr: [getBeforeMonth(6).timeStr, getBeforeMonth(1).timeStr]
+                        value: [getBeforeMonth(6).timeStr, getBeforeMonth(1).timeStr],
+                        onClick: () => {
+                            return [getBeforeMonth(6).timeStr, getBeforeMonth(1).timeStr];
+                        },
                     },{
                         text: '近12个月',
-                        timeStamp: [getBeforeMonth(12).timeStamp, getBeforeMonth(1).timeStamp],
-                        timeStr: [getBeforeMonth(12).timeStr, getBeforeMonth(1).timeStr]
+                        value: [getBeforeMonth(12).timeStr, getBeforeMonth(1).timeStr],
+                        onClick: () => {
+                            return [getBeforeMonth(12).timeStr, getBeforeMonth(1).timeStr];
+                        },
                     }];
                     return shortcutsMonth;
                 }
@@ -337,28 +353,36 @@
                 default: 0
             },
         },
-        created() {
-             
-        },
         watch: {
             //时间类型切换，快捷菜单列表切换并选中默认值
            'timeType'(newVal) {
                 if(newVal.value){
                     if(newVal.value == 'day'){
                         this.shortcuts = this.shortcutsDate;
-                        this.modelValue = this.shortcutsDate[this.defaultActiveDateIndex].timeStamp;
+                        this.modelValue = this.shortcutsDate[this.defaultActiveDateIndex].value;
                     }else{
                         this.shortcuts = this.shortcutsMonth; 
-                        this.modelValue = this.shortcutsMonth[this.defaultActiveDateIndex].timeStamp;
+                        this.modelValue = this.shortcutsMonth[this.defaultActiveDateIndex].value;
                     }
                 }
            },
-        //    'modelValue'(newVal) {
-        //         if(newVal){
-        //            this.modelValue = newVal; 
-        //            debugger
-        //         }
-        //    },
+           'modelValue'(newVal) {
+               if(newVal){
+                   let newTimeText = this.handleDateFormatTxt(newVal);
+                   this.timeText = newTimeText;
+               }
+           }
+        },
+        computed:{
+            timeText:{
+                get(){
+                    let defaultTimeText = this.handleDateFormatTxt(this.modelValue)
+                    return defaultTimeText;
+                },
+                set(newVal){
+                    if(newVal)return newVal
+                }
+            }
         },
         methods: {
             //时间面板显示/收起
@@ -375,31 +399,43 @@
             //快捷键的选择
             handleFastChoose(chooseItem, chooseIndex){
                 this.curFastChoose = chooseIndex;
-                this.modelValue = chooseItem.timeStamp;
-                debugger
+                var initModelValue = chooseItem.onClick();  //重新赋值快捷键
+                this.modelValue = initModelValue;
+                console.log(initModelValue,111)                
             },
             //自定义时间触发
             handleFocus(){
                 this.curFastChoose = -1;
-
             },
             //自定义时间
             handleDatePickerChange(date){
-                // this.modelValue = date;
-                console.log(date,111)
-
+                // console.log(date,111)
             },
             //确定
             handleSubmit(){
                 this.isShowTimePanel = false;
                 this.iconToggle = false;
+                let timeValue = this.modelValue;
+                this.timeText = this.handleDateFormatTxt(timeValue);
+                this.$emit('selectTime', timeValue)
             },
             //取消
             handleCancel(){
                 this.isShowTimePanel = false; 
-                this.iconToggle = false;                               
-            }
-            
-        },
+                this.iconToggle = false;  
+            },
+            //处理格式 按日：2018.03.13 按月： 2018.03
+            handleDateFormatTxt(date){
+                let timeTextArr = [];
+                let dateArr = date;
+                dateArr.map((item, index) => {
+                    this.timeType.value == 'day' ? 
+                    item = item.split('-').join('.') :  
+                    item = item.split('-').slice(0,2).join('.')
+                    timeTextArr.push(item);
+                })
+                return timeTextArr;
+            }            
+        }
     };
 </script>

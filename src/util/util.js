@@ -496,8 +496,9 @@ export const getBeforeMonth = (num) => {
     var newYear = year;
     var newMonth = parseInt(mon) - num;
     if (newMonth <= 0) {
-        newYear = parseInt(newYear) - parseInt(newMonth / 12 == 0 ? 1 : parseInt(newMonth) / 12);
-        newMonth = 12 - (Math.abs(newMonth) % 12);
+        var absM = Math.abs(newMonth);
+        newYear = parseInt(newYear) - Math.ceil(absM / 12 == 0 ? 1 : parseInt(absM) / 12);
+        newMonth = 12 - (absM % 12);
     }
     var newDay = day;
     var days2 = new Date(newYear, newMonth, 0);
